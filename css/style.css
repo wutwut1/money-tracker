@@ -1,0 +1,765 @@
+/* บัญชีรายรับรายจ่าย - mobile-first
+   คลาสที่ JS ใช้: .income .expense .lv-green .lv-orange .lv-red
+   .progress > .bar .legend .toast(.show) .error-text .muted
+   .tx-row .tx-main .tx-meta .tx-amount .tx-actions .budget-item .cat-item */
+
+:root {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --text: #1c2430;
+  --muted: #5b6675;
+  --border: #d9dee6;
+  --primary: #2457c5;
+  --primary-hover: #1c469f;
+  --primary-text: #ffffff;
+  --income: #127a3c;
+  --income-bg: #e6f4ec;
+  --expense: #c62828;
+  --expense-bg: #fbeaea;
+  --green: #2e9e57;
+  --orange: #e08a00;
+  --red: #d32f2f;
+  --track: #e6e9ef;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(20, 30, 50, 0.08);
+  --font: system-ui, -apple-system, "Segoe UI", "Leelawadee UI", Tahoma, "Noto Sans Thai", "Sukhumvit Set", Roboto, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--text);
+  background: var(--bg);
+  overflow-x: hidden;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+h1, h2, h3, p {
+  margin: 0;
+}
+
+svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.container {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 12px;
+}
+
+main.container {
+  padding-top: 12px;
+  padding-bottom: 32px;
+}
+
+/* ---------- สีหลัก ---------- */
+.income { color: var(--income); }
+.expense { color: var(--expense); }
+.muted { color: var(--muted); }
+.small { font-size: 0.875rem; }
+
+.error-text {
+  color: var(--expense);
+  font-size: 0.875rem;
+  min-height: 1.25em;
+  margin-top: 4px;
+}
+
+.error-text:empty {
+  min-height: 0;
+  margin-top: 0;
+}
+
+/* ---------- header ---------- */
+.app-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.header-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.app-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.month-label {
+  min-width: 9.5em;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* ---------- ปุ่ม ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 16px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:hover {
+  background: #eef1f6;
+}
+
+.btn:focus-visible,
+.tab-btn:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid rgba(36, 87, 197, 0.45);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  color: var(--primary-text);
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+
+.btn-danger {
+  color: var(--expense);
+  border-color: #efc4c4;
+}
+
+.btn-danger:hover {
+  background: var(--expense-bg);
+}
+
+.btn-icon {
+  min-width: 44px;
+  padding: 0 10px;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.btn-small {
+  min-height: 44px;
+  padding: 6px 12px;
+  font-size: 0.875rem;
+}
+
+.btn-add {
+  width: 100%;
+  margin: 12px 0;
+  font-size: 1.0625rem;
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ---------- การ์ด ---------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.summary-card {
+  flex: 1 1 0;
+  min-width: 0;
+  margin-bottom: 0;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.card-label {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.card-value {
+  font-size: 1rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.section-title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.sub-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  margin: 12px 0 6px;
+}
+
+/* ---------- แท็บ ---------- */
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 12px;
+  background: var(--track);
+  border-radius: var(--radius);
+}
+
+.tab-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
+  padding: 6px 4px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.tab-btn[aria-selected="true"],
+.tab-btn.active {
+  color: var(--primary);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+/* ---------- รายการ ---------- */
+.tx-list,
+.cat-list,
+.legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tx-list {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.tx-list:empty {
+  display: none;
+}
+
+.tx-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tx-row:last-child {
+  border-bottom: 0;
+}
+
+.tx-main {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.tx-category {
+  font-weight: 600;
+}
+
+.tx-meta,
+.tx-note {
+  font-size: 0.875rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.tx-amount {
+  font-weight: 700;
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.tx-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.empty {
+  text-align: center;
+  padding: 28px 12px;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
+
+/* ---------- กราฟ ---------- */
+.pie-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.pie-chart {
+  flex: 1 1 200px;
+  max-width: 280px;
+  margin: 0 auto;
+}
+
+.bar-chart {
+  width: 100%;
+}
+
+.legend {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.legend li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.legend li:last-child {
+  border-bottom: 0;
+}
+
+.legend .swatch {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+}
+
+.legend .name {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.legend .value {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.legend .pct {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.chart-key {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 0.875rem;
+}
+
+.key-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.key-expense {
+  margin-left: 10px;
+}
+
+.key-income { background: var(--income); }
+.key-expense { background: var(--expense); }
+
+/* ---------- งบ ---------- */
+.budget-item {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.budget-item:last-child {
+  border-bottom: 0;
+}
+
+.budget-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 8px;
+  margin-bottom: 6px;
+}
+
+.budget-name {
+  font-weight: 600;
+}
+
+.budget-note {
+  font-size: 0.875rem;
+  margin-top: 4px;
+}
+
+.progress {
+  width: 100%;
+  height: 12px;
+  background: var(--track);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress > .bar {
+  height: 100%;
+  width: 0;
+  max-width: 100%;
+  border-radius: 999px;
+  background: var(--green);
+  transition: width 0.3s ease;
+}
+
+.lv-green { --lv: var(--green); }
+.lv-orange { --lv: var(--orange); }
+.lv-red { --lv: var(--red); }
+
+.progress > .bar.lv-green,
+.progress.lv-green > .bar { background: var(--green); }
+.progress > .bar.lv-orange,
+.progress.lv-orange > .bar { background: var(--orange); }
+.progress > .bar.lv-red,
+.progress.lv-red > .bar { background: var(--red); }
+
+.over-text,
+.budget-note.lv-red {
+  color: var(--expense);
+  font-weight: 600;
+}
+
+.budget-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0 12px;
+}
+
+.budget-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+
+.budget-row > span,
+.budget-row > label {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+
+.budget-row > input {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+
+/* ---------- ตั้งค่า / หมวด ---------- */
+.cat-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.cat-item:last-child {
+  border-bottom: 0;
+}
+
+.cat-item .cat-name,
+.cat-item input[type="text"] {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+.cat-form {
+  margin-top: 12px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.field-type {
+  flex: 0 1 140px;
+}
+
+.field-grow {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+/* ---------- ฟอร์ม ---------- */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+  min-width: 0;
+}
+
+.form-row .field {
+  margin-bottom: 0;
+}
+
+.field-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+input[type="text"],
+input[type="date"],
+input[type="number"],
+select {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+input[aria-invalid="true"] {
+  border-color: var(--expense);
+}
+
+.type-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+}
+
+.type-switch legend {
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 0;
+}
+
+.type-option {
+  flex: 1 1 120px;
+  position: relative;
+}
+
+.type-option input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.type-option span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 12px;
+  font-weight: 600;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  background: var(--surface);
+}
+
+.type-expense input:checked + span {
+  color: var(--expense);
+  background: var(--expense-bg);
+  border-color: var(--expense);
+}
+
+.type-income input:checked + span {
+  color: var(--income);
+  background: var(--income-bg);
+  border-color: var(--income);
+}
+
+.type-option input:focus-visible + span {
+  outline: 3px solid rgba(36, 87, 197, 0.45);
+  outline-offset: 2px;
+}
+
+/* ---------- dialog ---------- */
+.dialog {
+  width: calc(100% - 24px);
+  max-width: 480px;
+  max-height: calc(100% - 24px);
+  padding: 0;
+  color: var(--text);
+  background: var(--surface);
+  border: 0;
+  border-radius: var(--radius);
+  box-shadow: 0 10px 40px rgba(20, 30, 50, 0.25);
+}
+
+.dialog::backdrop {
+  background: rgba(20, 30, 50, 0.45);
+}
+
+.tx-form {
+  padding: 18px 16px 16px;
+}
+
+.dialog-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.dialog-actions {
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.dialog-actions .btn {
+  flex: 1 1 120px;
+}
+
+/* ---------- toast ---------- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  z-index: 100;
+  width: calc(100% - 24px);
+  max-width: 480px;
+  padding: 12px 16px;
+  color: #ffffff;
+  background: #1c2430;
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(20, 30, 50, 0.3);
+  transform: translate(-50%, 20px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+}
+
+.toast.show {
+  transform: translate(-50%, 0);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.toast.error,
+.toast.warn {
+  background: #9f1d1d;
+}
+
+/* ---------- จอคอม ---------- */
+@media (min-width: 600px) {
+  .container {
+    padding: 0 20px;
+  }
+
+  main.container {
+    padding-top: 20px;
+  }
+
+  .app-title {
+    font-size: 1.25rem;
+  }
+
+  .summary {
+    gap: 12px;
+  }
+
+  .summary-card {
+    padding: 14px 16px;
+  }
+
+  .card-label {
+    font-size: 0.875rem;
+  }
+
+  .card-value {
+    font-size: 1.25rem;
+  }
+
+  .btn-add {
+    width: auto;
+  }
+
+  .card {
+    padding: 18px 20px;
+  }
+
+  .tx-row {
+    padding: 12px 18px;
+  }
+}

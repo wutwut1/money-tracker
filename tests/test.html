@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Unit test บัญชีรายรับรายจ่าย</title>
+</head>
+<body>
+  <pre id="result">กำลังรัน...</pre>
+
+  <script src="harness.js"></script>
+  <script src="../js/money.js" onerror="MoneyTest.loadError(this.src)"></script>
+  <script src="../js/data.js" onerror="MoneyTest.loadError(this.src)"></script>
+  <script src="../js/reports.js" onerror="MoneyTest.loadError(this.src)"></script>
+  <script src="money.test.js" onerror="MoneyTest.loadError(this.src)"></script>
+  <script src="data.test.js" onerror="MoneyTest.loadError(this.src)"></script>
+  <script src="reports.test.js" onerror="MoneyTest.loadError(this.src)"></script>
+  <script>
+    if (window.MoneyTest) {
+      MoneyTest.run(['money', 'data', 'reports']);
+    } else {
+      document.getElementById('result').textContent = 'FAIL load > harness: โหลด harness.js ไม่ได้\nFAIL 1/1';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<!--
+  สัญญา id (ห้ามเปลี่ยน) ใช้ร่วมกับ js/app.js และ js/ui-*.js
+
+  ส่วนหัวและเดือน
+  app-title          h1      ชื่อแอป
+  month-prev         button  ไปเดือนก่อนหน้า
+  month-next         button  ไปเดือนถัดไป
+  month-label        span    ข้อความชื่อเดือนไทย + ปี พ.ศ. (เช่น "พฤศจิกายน 2569")
+
+  การ์ดสรุป
+  sum-income         span    ยอดรายรับรวมของเดือน (เริ่มต้น ฿0.00)
+  sum-expense        span    ยอดรายจ่ายรวมของเดือน (เริ่มต้น ฿0.00)
+  sum-balance        span    ยอดคงเหลือของเดือน (เริ่มต้น ฿0.00) JS ใส่คลาส .income/.expense ตามเครื่องหมายได้
+  btn-add            button  เปิดฟอร์มเพิ่มรายการ
+
+  แท็บ (ปุ่มมีคลาส .tab-btn และ data-tab="list|charts|budget|settings", ปุ่มที่ active มี aria-selected="true")
+  tab-bar            nav     แถบแท็บ
+  tab-btn-list       button  แท็บรายการ (data-tab="list")
+  tab-btn-charts     button  แท็บกราฟ (data-tab="charts")
+  tab-btn-budget     button  แท็บงบ (data-tab="budget")
+  tab-btn-settings   button  แท็บตั้งค่า (data-tab="settings")
+  panel-list         section panel รายการ (panel ที่ไม่ active ใช้ attribute hidden)
+  panel-charts       section panel กราฟ
+  panel-budget       section panel งบ
+  panel-settings     section panel ตั้งค่า
+
+  panel รายการ
+  tx-list            ul      container รายการของเดือน (JS เติม li.tx-row)
+  tx-empty           p       ข้อความ "ยังไม่มีรายการในเดือนนี้" (JS สลับ hidden)
+
+  panel กราฟ
+  pie-chart          div     container กราฟวงกลม (SVG) หรือข้อความ "ยังไม่มีรายจ่าย"
+  pie-legend         ul      container คำอธิบายสี (ชื่อ ยอด %)
+  bar-chart          div     container กราฟแท่ง 6 เดือน (SVG)
+
+  panel งบ
+  budget-status      div     container สถานะงบของหมวดที่ตั้งงบ (แถบ .progress > .bar)
+  budget-form        form    ฟอร์มตั้งงบ
+  budget-inputs      div     container ว่างให้ JS เติมช่องกรอกงบของทุกหมวดรายจ่าย
+  budget-save        button  ปุ่มบันทึกงบ (type=submit ของ budget-form)
+
+  panel ตั้งค่า: หมวดหมู่
+  cat-list-expense   ul      container รายการหมวดรายจ่าย
+  cat-list-income    ul      container รายการหมวดรายรับ
+  cat-form           form    ฟอร์มเพิ่มหมวด
+  cat-type           select  ประเภทของหมวดใหม่ (value: expense | income)
+  cat-name           input   ชื่อหมวดใหม่
+  cat-add            button  ปุ่มเพิ่มหมวด (type=submit ของ cat-form)
+  cat-error          p       ที่แสดง error ของการจัดการหมวด
+
+  panel ตั้งค่า: สำรองข้อมูล
+  export-json        button  ดาวน์โหลดไฟล์สำรอง JSON
+  export-csv         button  ดาวน์โหลดไฟล์ CSV
+  import-json        button  เปิดตัวเลือกไฟล์เพื่อ import JSON (JS เรียก import-file.click())
+  import-file        input   input type=file ที่ซ่อนไว้ accept=".json,application/json"
+
+  ฟอร์มรายการ (dialog)
+  tx-dialog          dialog  กล่องฟอร์มเพิ่ม/แก้รายการ (เปิดด้วย showModal())
+  tx-form            form    ฟอร์มรายการ (novalidate, JS ตรวจเอง)
+  tx-form-title      h2      หัวข้อ "เพิ่มรายการ" หรือ "แก้ไขรายการ"
+  tx-type-expense    input   radio name="tx-type" value="expense" (รายจ่าย, เลือกไว้ก่อน)
+  tx-type-income     input   radio name="tx-type" value="income" (รายรับ)
+  tx-amount          input   จำนวนเงิน type=text inputmode=decimal
+  tx-amount-error    p       error ใต้ช่องจำนวนเงิน
+  tx-category        select  หมวด (JS เติม option ตามประเภท)
+  tx-date            input   วันที่ type=date
+  tx-note            input   โน้ต (ไม่บังคับ)
+  tx-save            button  ปุ่มบันทึก (type=submit ของ tx-form)
+  tx-cancel          button  ปุ่มยกเลิก (ปิด dialog)
+
+  แจ้งเตือน
+  toast              div     กล่องแจ้งเตือน role=alert aria-live (ใส่คลาส .show เพื่อแสดง)
+-->
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>บัญชีรายรับรายจ่าย</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="container header-inner">
+      <h1 id="app-title" class="app-title">บัญชีรายรับรายจ่าย</h1>
+      <div class="month-nav">
+        <button type="button" id="month-prev" class="btn btn-icon" aria-label="เดือนก่อนหน้า" title="เดือนก่อนหน้า">&#8249;</button>
+        <span id="month-label" class="month-label" aria-live="polite">-</span>
+        <button type="button" id="month-next" class="btn btn-icon" aria-label="เดือนถัดไป" title="เดือนถัดไป">&#8250;</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="summary" aria-label="สรุปเดือน">
+      <div class="card summary-card">
+        <span class="card-label">รายรับ</span>
+        <span id="sum-income" class="card-value income">฿0.00</span>
+      </div>
+      <div class="card summary-card">
+        <span class="card-label">รายจ่าย</span>
+        <span id="sum-expense" class="card-value expense">฿0.00</span>
+      </div>
+      <div class="card summary-card">
+        <span class="card-label">คงเหลือ</span>
+        <span id="sum-balance" class="card-value">฿0.00</span>
+      </div>
+    </section>
+
+    <button type="button" id="btn-add" class="btn btn-primary btn-add">+ เพิ่มรายการ</button>
+
+    <nav id="tab-bar" class="tab-bar" role="tablist" aria-label="เมนู">
+      <button type="button" id="tab-btn-list" class="tab-btn" role="tab" data-tab="list" aria-controls="panel-list" aria-selected="true">รายการ</button>
+      <button type="button" id="tab-btn-charts" class="tab-btn" role="tab" data-tab="charts" aria-controls="panel-charts" aria-selected="false">กราฟ</button>
+      <button type="button" id="tab-btn-budget" class="tab-btn" role="tab" data-tab="budget" aria-controls="panel-budget" aria-selected="false">งบ</button>
+      <button type="button" id="tab-btn-settings" class="tab-btn" role="tab" data-tab="settings" aria-controls="panel-settings" aria-selected="false">ตั้งค่า</button>
+    </nav>
+
+    <!-- รายการ -->
+    <section id="panel-list" class="panel" role="tabpanel" aria-labelledby="tab-btn-list">
+      <ul id="tx-list" class="tx-list"></ul>
+      <p id="tx-empty" class="empty muted">ยังไม่มีรายการในเดือนนี้</p>
+    </section>
+
+    <!-- กราฟ -->
+    <section id="panel-charts" class="panel" role="tabpanel" aria-labelledby="tab-btn-charts" hidden>
+      <div class="card">
+        <h2 class="section-title">รายจ่ายแยกตามหมวด</h2>
+        <div class="pie-wrap">
+          <div id="pie-chart" class="chart pie-chart"></div>
+          <ul id="pie-legend" class="legend"></ul>
+        </div>
+      </div>
+      <div class="card">
+        <h2 class="section-title">รายรับ-รายจ่าย 6 เดือน</h2>
+        <div id="bar-chart" class="chart bar-chart"></div>
+        <p class="chart-key muted">
+          <span class="key-dot key-income"></span> รายรับ
+          <span class="key-dot key-expense"></span> รายจ่าย
+        </p>
+      </div>
+    </section>
+
+    <!-- งบ -->
+    <section id="panel-budget" class="panel" role="tabpanel" aria-labelledby="tab-btn-budget" hidden>
+      <div class="card">
+        <h2 class="section-title">สถานะงบเดือนนี้</h2>
+        <div id="budget-status" class="budget-status"></div>
+      </div>
+      <div class="card">
+        <h2 class="section-title">ตั้งงบรายเดือน</h2>
+        <p class="muted small">เว้นว่างหรือใส่ 0 หมายถึงไม่ตั้งงบ งบชุดเดียวใช้กับทุกเดือน</p>
+        <form id="budget-form" class="budget-form" novalidate>
+          <div id="budget-inputs" class="budget-inputs"></div>
+          <button type="submit" id="budget-save" class="btn btn-primary">บันทึกงบ</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ตั้งค่า -->
+    <section id="panel-settings" class="panel" role="tabpanel" aria-labelledby="tab-btn-settings" hidden>
+      <div class="card">
+        <h2 class="section-title">สำรองข้อมูล</h2>
+        <p class="muted small">ข้อมูลเก็บอยู่ในเบราว์เซอร์นี้เท่านั้น ถ้าล้างข้อมูลเบราว์เซอร์ข้อมูลจะหาย ควร Export เก็บไว้เป็นระยะ</p>
+        <div class="btn-row">
+          <button type="button" id="export-json" class="btn btn-primary">Export JSON</button>
+          <button type="button" id="export-csv" class="btn">Export CSV</button>
+          <button type="button" id="import-json" class="btn">Import JSON</button>
+        </div>
+        <input type="file" id="import-file" accept=".json,application/json" hidden>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">หมวดหมู่</h2>
+        <h3 class="sub-title expense">หมวดรายจ่าย</h3>
+        <ul id="cat-list-expense" class="cat-list"></ul>
+        <h3 class="sub-title income">หมวดรายรับ</h3>
+        <ul id="cat-list-income" class="cat-list"></ul>
+
+        <form id="cat-form" class="cat-form" novalidate>
+          <h3 class="sub-title">เพิ่มหมวดใหม่</h3>
+          <div class="form-row">
+            <label class="field field-type">
+              <span class="field-label">ประเภท</span>
+              <select id="cat-type">
+                <option value="expense">รายจ่าย</option>
+                <option value="income">รายรับ</option>
+              </select>
+            </label>
+            <label class="field field-grow">
+              <span class="field-label">ชื่อหมวด</span>
+              <input type="text" id="cat-name" maxlength="40" autocomplete="off" placeholder="เช่น กาแฟ">
+            </label>
+            <button type="submit" id="cat-add" class="btn btn-primary">เพิ่ม</button>
+          </div>
+          <p id="cat-error" class="error-text" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- ฟอร์มเพิ่ม/แก้รายการ -->
+  <dialog id="tx-dialog" class="dialog" aria-labelledby="tx-form-title">
+    <form id="tx-form" class="tx-form" novalidate>
+      <h2 id="tx-form-title" class="dialog-title">เพิ่มรายการ</h2>
+
+      <fieldset class="type-switch">
+        <legend class="field-label">ประเภท</legend>
+        <label class="type-option type-expense">
+          <input type="radio" id="tx-type-expense" name="tx-type" value="expense" checked>
+          <span>รายจ่าย</span>
+        </label>
+        <label class="type-option type-income">
+          <input type="radio" id="tx-type-income" name="tx-type" value="income">
+          <span>รายรับ</span>
+        </label>
+      </fieldset>
+
+      <div class="field">
+        <label class="field-label" for="tx-amount">จำนวนเงิน (บาท)</label>
+        <input type="text" id="tx-amount" inputmode="decimal" placeholder="0.00" autocomplete="off" aria-describedby="tx-amount-error">
+        <p id="tx-amount-error" class="error-text" aria-live="polite"></p>
+      </div>
+
+      <label class="field">
+        <span class="field-label">หมวด</span>
+        <select id="tx-category"></select>
+      </label>
+
+      <label class="field">
+        <span class="field-label">วันที่</span>
+        <input type="date" id="tx-date">
+      </label>
+
+      <label class="field">
+        <span class="field-label">โน้ต (ไม่บังคับ)</span>
+        <input type="text" id="tx-note" maxlength="200" autocomplete="off">
+      </label>
+
+      <div class="btn-row dialog-actions">
+        <button type="button" id="tx-cancel" class="btn">ยกเลิก</button>
+        <button type="submit" id="tx-save" class="btn btn-primary">บันทึก</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="alert" aria-live="assertive"></div>
+
+  <script src="js/money.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/reports.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/ui-charts.js"></script>
+  <script src="js/ui-budget.js"></script>
+  <script src="js/ui-settings.js"></script>
+</body>
+</html>
